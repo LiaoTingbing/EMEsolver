@@ -25,7 +25,7 @@ include_directories(
 # 将源代码添加到此项目的可执行文件。
 add_executable (EMEsolver 
 ${sourcefiles}
-  "include/load_hdf5.h" "src/load_hdf5.cpp")
+  "include/load_hdf5.h" "src/load_hdf5.cpp" "include/sconnectright.h" "src/sconnectright.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET EMEsolver PROPERTY CXX_STANDARD 20)
