@@ -1,6 +1,7 @@
 ﻿#pragma once
  
 
+#include<vector>
 #include<map>
 #include<cstring>
 #include <iostream>
@@ -11,6 +12,8 @@
 using namespace arma;
 using namespace std;
 
+const double PI = 3.1415926;
+const cx_double IU(0, 1);
 
 struct ModeField
 {
@@ -21,14 +24,25 @@ struct ModeField
 	cx_mat hx;
 	cx_mat hy;
 	cx_mat hz;
-	cx_double neff;
-	double lambda;
-	vec y;
-	vec z;
-	vec x;
+};
+
+
+struct SMatrix
+{
+	cx_mat S11;
+	cx_mat S12;
+	cx_mat S21;
+	cx_mat S22;
 };
 
 struct Cell
 {
 	field<ModeField> modeFields;
+	double lambda;
+	cx_vec neffs;
+	vec y;
+	vec z;
+	vec x;
+	SMatrix s;
+
 };
