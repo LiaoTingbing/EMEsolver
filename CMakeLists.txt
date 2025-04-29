@@ -17,7 +17,7 @@ aux_source_directory(./ sourcefiles)
 include_directories(
 	E:/VisualStudioFiles/vcpkg/vcpkg/installed/x64-windows/include
 	E:/VisualStudioFiles/vcpkg/ku/SuperLU/SRC
-	E:/VisualStudioFiles/vcpkg/ku/armadillo-12.6.6/armadillo-12.6.6/include
+	E:/VisualStudioFiles/vcpkg/ku/armadillo-14.4.1/include
 )
  
 
@@ -33,7 +33,7 @@ endif()
 
 
 target_link_libraries(${PROJECT_NAME}  
-E:/VisualStudioFiles/vcpkg/ku/armadillo-12.6.6/armadillo-12.6.6/examples/lib_win64/libopenblas.lib
+E:/VisualStudioFiles/vcpkg/ku/armadillo-14.4.1/lib_win64/libopenblas.lib
 E:/VisualStudioFiles/vcpkg/ku/SuperLU/x64/Release/SuperLU.lib
 
 E:/VisualStudioFiles/vcpkg/vcpkg/installed/x64-windows/lib/aec.lib

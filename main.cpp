@@ -7,13 +7,13 @@ map<string, cube> dev;
 void loadHdf5()
 {
 	// 读取x
-	cout << "读取文件数据";
+	cout << "\t读取文件数据\n";
 	string fileName = "E:/VisualStudioFiles/EMEsolver/lumerical/out.h5";
 
-	int nmodes = 10;
+	int nmodes = 3;
 	int ncells = 10;
 	int ny = 51;
-	int nz = 51;
+	int nz = 61;
 
 	field<Cell> Cells(ncells);
 	// 加载有效折射率
@@ -52,6 +52,8 @@ void loadHdf5()
 			modeReal.load(hdf5_name(fileName, modeRealName));
 			cube modeImag;
 			modeImag.load(hdf5_name(fileName, modeImagName));
+			//cout << modeReal.n_rows << modeReal.n_cols
+			//	<< modeReal.n_slices<<endl;
 
 			// 存储ex
 			Cells(indexCell).modeFields(modeIndex).ex
@@ -74,7 +76,78 @@ void loadHdf5()
 		}
 	}
 
+	// 计算归一化电场
+	cout << "\t计算归一化电场\n";
+	for (int cellIndex = 0;cellIndex < ncells;cellIndex++)
+	{
+		// 归一化
+		for (int modeIndex = 0; modeIndex < nmodes; modeIndex++)
+		{
+			mat Px = real(
+				Cells(cellIndex).modeFields(modeIndex).ey % Cells(cellIndex).modeFields(modeIndex).hz
+				- Cells(cellIndex).modeFields(modeIndex).ez % Cells(cellIndex).modeFields(modeIndex).hy
+			);
+			mat  power = trapz(Cells(cellIndex).z,
+				trapz(Cells(cellIndex).y, Px, 0), 1);
+			Cells(cellIndex).modeFields(modeIndex).ex /= sqrt(power(0));
+			Cells(cellIndex).modeFields(modeIndex).ey /= sqrt(power(0));
+			Cells(cellIndex).modeFields(modeIndex).ez /= sqrt(power(0));
+			Cells(cellIndex).modeFields(modeIndex).hx /= sqrt(power(0));
+			Cells(cellIndex).modeFields(modeIndex).hy /= sqrt(power(0));
+			Cells(cellIndex).modeFields(modeIndex).hz /= sqrt(power(0));
+		}
+	}
 
+	// 计算传播散射矩阵
+	cout << "\t计算传播散射矩阵\n";
+	for (int cellIndex = 0; cellIndex < ncells; cellIndex++)
+	{
+		// 计算传播散射矩阵
+		Cells(cellIndex).propagateSMAtrix.S11 = cx_mat(nmodes, nmodes);
+		Cells(cellIndex).propagateSMAtrix.S12 =
+			diagmat(exp(-IU * Cells(cellIndex).neffs * 2 * PI / Cells(cellIndex).lambda));
+		Cells(cellIndex).propagateSMAtrix.S21 =
+			diagmat(exp(+IU * Cells(cellIndex).neffs * 2 * PI / Cells(cellIndex).lambda));
+		Cells(cellIndex).propagateSMAtrix.S22 = cx_mat(nmodes, nmodes);
+
+	}
+
+	// 计算重叠积分
+	cout << "\t计算重叠积分\n";
+	for (int cellIndex = 0; cellIndex < ncells; cellIndex++)
+	{
+		Cells(cellIndex).overlapNowPrevious.set_size(nmodes, nmodes);
+		Cells(cellIndex).overlapNowNext.set_size(nmodes, nmodes);
+
+		cx_mat Px;
+		mat PxReal;
+		for (int i = 0;i < nmodes;i++)
+		{
+			for (int j = 0;j < nmodes;j++)
+			{
+				if (cellIndex > 0)
+				{
+					Px = Cells(cellIndex).modeFields(i).ey % Cells(cellIndex - 1).modeFields(j).hz
+						- Cells(cellIndex).modeFields(i).ez % Cells(cellIndex - 1).modeFields(j).hy;
+					PxReal = trapz(Cells(cellIndex).z, trapz(Cells(cellIndex).y
+						, real(Px), 0), 1);
+					Cells(cellIndex).overlapNowPrevious(i, j) = PxReal(0);
+				}
+				if (cellIndex < ncells - 1)
+				{
+					Px = Cells(cellIndex).modeFields(i).ey % Cells(cellIndex + 1).modeFields(j).hz
+						- Cells(cellIndex).modeFields(i).ez % Cells(cellIndex + 1).modeFields(j).hy;
+					PxReal = trapz(Cells(cellIndex).z, trapz(Cells(cellIndex).y
+						, real(Px), 0), 1);
+					Cells(cellIndex).overlapNowNext(i, j) = PxReal(0);
+				}
+			}
+		}
+
+	}
+
+	// 计算链接散射矩阵
+	cout << "\t计算链接矩阵\n";
 
 
 
