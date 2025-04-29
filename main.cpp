@@ -133,13 +133,13 @@ void loadHdf5()
 				}
 			}
 		}
-		cout << cellIndex + 1 << endl;
+		//cout << cellIndex + 1 << endl;
 
-		cout << "now next" << endl;
-		Cells(cellIndex).overlapNowNext.print();
-		cout << "now pre" << endl;
+		//cout << "now next" << endl;
+		//Cells(cellIndex).overlapNowNext.print();
+		//cout << "now pre" << endl;
 
-		Cells(cellIndex).overlapNowPrevious.print();
+		//Cells(cellIndex).overlapNowPrevious.print();
 
 	}
 	// 计算传播散射矩阵
@@ -163,20 +163,19 @@ void loadHdf5()
 		// i + 1 
 		mat O12 = Cells(i).overlapNowNext;
 		mat O21 = Cells(i+1).overlapNowPrevious;
-		//mat T12 = 2 * inv(O21.st() + O12);
 		mat T12 =  solve(O21.st() + O12 , 2*eye(nmodes,nmodes));
-
 		mat R12 = 0.5 * (O21.st() - O12) * T12; //对的
-		//mat T21 = 2 * inv(O12.st() + O21);
 		mat T21 = solve(O12.st() + O21  ,2*eye(nmodes,nmodes));
-
 		mat R21 = 0.5 * (O12.st() - O21) * T21;
+
+
 		joinSMatrix(i).S11 = R12 + 0.0 * IU;
-		joinSMatrix(i).S12 = T21 + 0.0 * IU;
-		joinSMatrix(i).S21 = T12 + 0.0 * IU;
-		joinSMatrix(i).S22 = R21 + 0.0 * IU;
-		cout << i + 1 << endl;
-		joinSMatrix(i).S21.print();
+		joinSMatrix(i).S12 = inv(T21) + 0.0 * IU;
+		joinSMatrix(i).S21 = inv(T12) + 0.0 * IU;
+		joinSMatrix(i).S22 = R21  + 0.0 * IU;
+		//cout << i + 1 << endl;
+		//joinSMatrix(i).S12.print();
+		//cout << -inv(T21)*R12 ;
 	}
 
 	// 链接全局矩阵
@@ -188,10 +187,11 @@ void loadHdf5()
 		SconnectRight(globalSMatrix, Cells(i + 1).propagateSMAtrix);
 	}
  
-	//globalSMatrix.S12.print();
+	mat as = abs( globalSMatrix.S12);
+	as.print();
 	//globalSMatrix.S21.print();
 
-	joinSMatrix(0).S21.print();
+	//joinSMatrix(0).S21.print();
 	//Cells(0).overlapNowNext.print();
 
 
