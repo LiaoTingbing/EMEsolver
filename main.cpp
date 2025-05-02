@@ -170,11 +170,11 @@ void loadHdf5()
 
 
 		joinSMatrix(i).S11 = R12 + 0.0 * IU;
-		joinSMatrix(i).S12 = inv(T21) + 0.0 * IU;
-		joinSMatrix(i).S21 = inv(T12) + 0.0 * IU;
+		joinSMatrix(i).S12 =  inv(T21) + 0.0 * IU;
+		joinSMatrix(i).S21 =  inv(T12) + 0.0 * IU;
 		joinSMatrix(i).S22 = R21  + 0.0 * IU;
 		//cout << i + 1 << endl;
-		//joinSMatrix(i).S12.print();
+		//joinSMatrix(i).S21.print();
 		//cout << -inv(T21)*R12 ;
 	}
 
@@ -187,13 +187,37 @@ void loadHdf5()
 		SconnectRight(globalSMatrix, Cells(i + 1).propagateSMAtrix);
 	}
  
-	mat as = abs( globalSMatrix.S12);
-	as.print();
+	//mat as = abs( globalSMatrix.S12);
+	//as.print();
 	//globalSMatrix.S21.print();
 
 	//joinSMatrix(0).S21.print();
 	//Cells(0).overlapNowNext.print();
 
+
+	// 计算模式系数
+	cx_mat a( nmodes , ncells  );
+	cx_mat b( nmodes , ncells);
+	// 基模 index=1；前向
+	a(0, 0) = 1;
+	//a.print();
+
+	for (int cellIndex = 1; cellIndex < ncells; cellIndex++)
+	{
+		//a.col(cellIndex)=joinSMatrix(cellIndex - 1).S21* a.col(cellIndex - 1);
+		////a.col(cellIndex-1).print();
+		//a.col(cellIndex) = Cells(cellIndex).propagateSMAtrix()
+	}
+
+	//mat apower =real( a % conj(a) );
+	//apower.print();
+
+	//cx_vec atest = joinSMatrix(0).S21 *  Cells(0).propagateSMAtrix.S21 * vec{ 1,0,0 };
+	//atest.print();
+
+
+
+	// 采用Taper
 
 
 
