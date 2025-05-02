@@ -10,7 +10,7 @@ void loadHdf5()
 	cout << "\t读取文件数据\n";
 	string fileName = "E:/VisualStudioFiles/EMEsolver/lumerical/out.h5";
 
-	int nmodes = 3;
+	int nmodes = 5;
 	int ncells = 10;
 	int ny = 51;
 	int nz = 61;
@@ -149,9 +149,9 @@ void loadHdf5()
 		// 计算传播散射矩阵
 		Cells(cellIndex).propagateSMAtrix.S11 = cx_mat(nmodes, nmodes);
 		Cells(cellIndex).propagateSMAtrix.S12 =
-			diagmat(exp(+IU * Cells(cellIndex).neffs * 2 * PI / Cells(cellIndex).lambda * dx));
+			diagmat(exp(-IU * Cells(cellIndex).neffs * 2 * PI / Cells(cellIndex).lambda * dx / 2));
 		Cells(cellIndex).propagateSMAtrix.S21 =
-			diagmat(exp(-IU * Cells(cellIndex).neffs * 2 * PI / Cells(cellIndex).lambda * dx) );
+			diagmat(exp(+IU * Cells(cellIndex).neffs * 2 * PI / Cells(cellIndex).lambda * dx / 2));
 		Cells(cellIndex).propagateSMAtrix.S22 = cx_mat(nmodes, nmodes);
 	}
 
@@ -162,68 +162,80 @@ void loadHdf5()
 	{
 		// i + 1 
 		mat O12 = Cells(i).overlapNowNext;
-		mat O21 = Cells(i+1).overlapNowPrevious;
-		mat T12 =  solve(O21.st() + O12 , 2*eye(nmodes,nmodes));
+		mat O21 = Cells(i + 1).overlapNowPrevious;
+		mat T12 = solve(O21.st() + O12, 2 * eye(nmodes, nmodes));
 		mat R12 = 0.5 * (O21.st() - O12) * T12; //对的
-		mat T21 = solve(O12.st() + O21  ,2*eye(nmodes,nmodes));
+		mat T21 = solve(O12.st() + O21, 2 * eye(nmodes, nmodes));
 		mat R21 = 0.5 * (O12.st() - O21) * T21;
 
-
 		joinSMatrix(i).S11 = R12 + 0.0 * IU;
-		joinSMatrix(i).S12 =  inv(T21) + 0.0 * IU;
-		joinSMatrix(i).S21 =  inv(T12) + 0.0 * IU;
-		joinSMatrix(i).S22 = R21  + 0.0 * IU;
+		joinSMatrix(i).S12 = inv(T21) + 0.0 * IU;
+		joinSMatrix(i).S21 = inv(T12) + 0.0 * IU;
+		joinSMatrix(i).S22 = R21 + 0.0 * IU;
 		//cout << i + 1 << endl;
 		//joinSMatrix(i).S21.print();
 		//cout << -inv(T21)*R12 ;
 	}
 
+	// 计算左边界处散射矩阵
+	SMatrix sLeft { cx_mat(nmodes,nmodes) ,
+	eye(nmodes, nmodes) + 0.0 * IU  ,
+	eye(nmodes, nmodes) + 0.0 * IU ,
+	cx_mat(nmodes,nmodes) };
+
+	// 计算右边界处散射矩阵
+	SMatrix sRight{ cx_mat(nmodes,nmodes) ,
+			eye(nmodes, nmodes) + 0.0 * IU  ,
+			eye(nmodes, nmodes) + 0.0 * IU ,
+			cx_mat(nmodes,nmodes) };
+
+
 	// 链接全局矩阵
-	SMatrix globalSMatrix = Cells(0).propagateSMAtrix;
-
-	for (int i = 0; i < ncells - 1; i++)
-	{
-		SconnectRight(globalSMatrix, joinSMatrix(i));
-		SconnectRight(globalSMatrix, Cells(i + 1).propagateSMAtrix);
-	}
- 
-	//mat as = abs( globalSMatrix.S12);
-	//as.print();
-	//globalSMatrix.S21.print();
-
-	//joinSMatrix(0).S21.print();
-	//Cells(0).overlapNowNext.print();
-
+	//SMatrix globalSMatrix = Cells(0).propagateSMAtrix;
+	SMatrix globalSMatrix{ cx_mat(nmodes,nmodes) , 
+	eye(nmodes, nmodes) + 0.0 * IU  ,
+	eye(nmodes, nmodes) + 0.0 * IU ,
+	cx_mat(nmodes,nmodes) };
 
 	// 计算模式系数
-	cx_mat a( nmodes , ncells  );
-	cx_mat b( nmodes , ncells);
+	cx_mat a(nmodes, ncells + 2);
+	cx_mat b(nmodes, ncells);
 	// 基模 index=1；前向
 	a(0, 0) = 1;
-	//a.print();
-
-	for (int cellIndex = 1; cellIndex < ncells; cellIndex++)
+	
+	// 左边的链接矩阵
+	SconnectRight(globalSMatrix, sLeft);
+	// 传输到第一个Cell中点的模式系数
+	SconnectRight(globalSMatrix, Cells(0).propagateSMAtrix);
+	a.col(0 + 1) = globalSMatrix.S21 * a.col(0);
+	//从左边开始传播
+	for (int i = 0; i < ncells - 1; i++)
 	{
-		//a.col(cellIndex)=joinSMatrix(cellIndex - 1).S21* a.col(cellIndex - 1);
-		////a.col(cellIndex-1).print();
-		//a.col(cellIndex) = Cells(cellIndex).propagateSMAtrix()
+		//  -|-  计算位置循环
+		SconnectRight(globalSMatrix, Cells(i).propagateSMAtrix);
+		SconnectRight(globalSMatrix, joinSMatrix(i));
+		SconnectRight(globalSMatrix, Cells(i+1).propagateSMAtrix);
+		a.col(i + 2) = globalSMatrix.S21 * a.col(0);
 	}
+	// 最后模式系数
+	SconnectRight(globalSMatrix, Cells(Cells.n_elem-1).propagateSMAtrix);
+	//传输到最后端点
+	//右边界的链接矩阵
+	SconnectRight(globalSMatrix, sRight);
+	a.col(a.n_cols-1) = globalSMatrix.S21 * a.col(0);
 
-	//mat apower =real( a % conj(a) );
-	//apower.print();
+ 
+	//a.col(1) = Cells(0).propagateSMAtrix.S21 * vec{ 1,0,0 };
 
-	//cx_vec atest = joinSMatrix(0).S21 *  Cells(0).propagateSMAtrix.S21 * vec{ 1,0,0 };
-	//atest.print();
-
-
-
-	// 采用Taper
+	mat real_a = real(a);
+	mat imag_a = imag(a);
+ 
 
 
+	real_a.print("a的实部\n");
+	imag_a.print("a的虚部\n");
 
-
-
-
+ 
 
 
 
