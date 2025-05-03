@@ -1,11 +1,15 @@
 ﻿
 
 #include "../include/emeSmatrix.h"
+#include "../include/emeTmaxtrix.h"
 
+
+ 
 
 int main()
 {
 
-	emepropagateSmatrix();
+	emepropagateTmatrix();
+	//emepropagateSmatrix();
 	return 0;
 }

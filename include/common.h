@@ -44,7 +44,7 @@ struct Cell
 	vec z;
 	vec x;
 	SMatrix propagateSMAtrix;
-	mat overlapNowPrevious;
+	mat overlapNowPast;
 	mat overlapNowNext;
 
 };
