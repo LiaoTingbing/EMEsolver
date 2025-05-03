@@ -49,8 +49,10 @@ struct Cell
 
 };
 
-struct Port
+struct TMatrix
 {
-
-
+	cx_mat T11;
+	cx_mat T12;
+	cx_mat T21;
+	cx_mat T22;
 };

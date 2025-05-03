@@ -16,6 +16,12 @@ void SconnectRight(SMatrix& G, SMatrix& S)
 	G.S22 = S.S22 + F * G.S22 * S.S12;
 }
 
+// SMatrix tToS(const TMatrix& t)
+// {
+//
+// 	return SMatrix();
+// }
+
 //SMatrix sRight(const SMatrix& A, const SMatrix& B)
 //{
 //	SMatrix AB;

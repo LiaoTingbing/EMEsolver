@@ -4,10 +4,7 @@
 void SconnectRight(SMatrix& G, SMatrix& S);
 
 
-SMatrix sRight(const SMatrix& A, const SMatrix& B);
-
-
- 
+SMatrix tToS(const  TMatrix & t);
 
 
 
